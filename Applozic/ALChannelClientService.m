@@ -84,23 +84,25 @@
                     [userNotPresentIds addObject:userId];
                 }
             }
-            if(userNotPresentIds.count>0)
-            {
-                ALSLog(ALLoggerSeverityInfo, @"Call userDetails...");
-                
-                ALUserService *alUserService = [ALUserService new];
-                [alUserService fetchAndupdateUserDetails:userNotPresentIds withCompletion:^(NSMutableArray *userDetailArray, NSError *theError) {
-                    ALSLog(ALLoggerSeverityInfo, @"User detail response sucessfull.");
-                    completion(error, response.alChannel);
-                    
-                }];
-            }
-            else
-            {
-                
-                ALSLog(ALLoggerSeverityWarn, @"No user for userDetails");
-                completion(error, response.alChannel);
-            }
+            completion(error, response.alChannel);
+            
+//            if(userNotPresentIds.count>0)
+//            {
+//                ALSLog(ALLoggerSeverityInfo, @"Call userDetails...");
+//
+//                ALUserService *alUserService = [ALUserService new];
+//                [alUserService fetchAndupdateUserDetails:userNotPresentIds withCompletion:^(NSMutableArray *userDetailArray, NSError *theError) {
+//                    ALSLog(ALLoggerSeverityInfo, @"User detail response sucessfull.");
+//                    completion(error, response.alChannel);
+//
+//                }];
+//            }
+//            else
+//            {
+//
+//                ALSLog(ALLoggerSeverityWarn, @"No user for userDetails");
+//                completion(error, response.alChannel);
+//            }
         }
     }];
 }
