@@ -169,24 +169,25 @@
         }
         
         
+        completion(response,nil);
         
-        [self connect];
-        ALMessageDBService * dbService = [[ALMessageDBService alloc] init];
-        if(dbService.isMessageTableEmpty)
-        {
-            [ALMessageService processLatestMessagesGroupByContactWithCompletion:^{
-                completion(response,nil);
-            }];
-        } else {
-            completion(response,nil);
-        }
+//        [self connect];
+//        ALMessageDBService * dbService = [[ALMessageDBService alloc] init];
+//        if(dbService.isMessageTableEmpty)
+//        {
+//            [ALMessageService processLatestMessagesGroupByContactWithCompletion:^{
+//                completion(response,nil);
+//            }];
+//        } else {
+//            completion(response,nil);
+//        }
         
-        ALUserService * alUserService = [ALUserService new];
-        [alUserService updateUserApplicationInfo];
-        
-        [alUserService getMutedUserListWithDelegate:nil withCompletion:^(NSMutableArray *userDetailArray, NSError *error) {
-    
-        }];
+//        ALUserService * alUserService = [ALUserService new];
+//        [alUserService updateUserApplicationInfo];
+//
+//        [alUserService getMutedUserListWithDelegate:nil withCompletion:^(NSMutableArray *userDetailArray, NSError *error) {
+//
+//        }];
     }];
 
 }
