@@ -74,18 +74,19 @@
         {
             ALSLog(ALLoggerSeverityInfo, @"RESPONSE_CHANNEL_INFORMATION :: %@", theJson);
             ALChannelCreateResponse *response = [[ALChannelCreateResponse alloc] initWithJSONString:theJson];
-            NSMutableArray * members = response.alChannel.membersId;
-            ALContactService * contactService = [ALContactService new];
-            NSMutableArray* userNotPresentIds =[NSMutableArray new];
-            for(NSString * userId in members)
-            {
-                if(![contactService isContactExist:userId])
-                {
-                    [userNotPresentIds addObject:userId];
-                }
-            }
             completion(error, response.alChannel);
             
+//            NSMutableArray * members = response.alChannel.membersId;
+//            ALContactService * contactService = [ALContactService new];
+//            NSMutableArray* userNotPresentIds =[NSMutableArray new];
+//            for(NSString * userId in members)
+//            {
+//                if(![contactService isContactExist:userId])
+//                {
+//                    [userNotPresentIds addObject:userId];
+//                }
+//            }
+//
 //            if(userNotPresentIds.count>0)
 //            {
 //                ALSLog(ALLoggerSeverityInfo, @"Call userDetails...");
