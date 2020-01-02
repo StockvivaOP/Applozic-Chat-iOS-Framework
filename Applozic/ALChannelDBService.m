@@ -32,15 +32,15 @@ dispatch_queue_t syncSerialBackgroundQueue;
     [theDBHandler.managedObjectContext save:nil];
 
 
-    if(channel.membersName == nil){
-        channel.membersName = channel.membersId;
-    }
-
-    [self deleteMembers:channel.key];
-
-    [self saveDataInBackgroundWithContext:theDBHandler.privateContext withChannel:channel];
-    [self addedMembersArray:channel.membersName andChannelKey:channel.key];
-    [self removedMembersArray:channel.removeMembers andChannelKey:channel.key];
+//    if(channel.membersName == nil){
+//        channel.membersName = channel.membersId;
+//    }
+//
+//    [self deleteMembers:channel.key];
+//
+//    [self saveDataInBackgroundWithContext:theDBHandler.privateContext withChannel:channel];
+//    [self addedMembersArray:channel.membersName andChannelKey:channel.key];
+//    [self removedMembersArray:channel.removeMembers andChannelKey:channel.key];
 
 }
 

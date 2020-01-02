@@ -35,10 +35,14 @@
     self.unreadCount = [self getNSNumberFromJsonValue:messageJson[@"unreadCount"]];
     self.userCount = [self getNSNumberFromJsonValue:messageJson[@"userCount"]];
 //    self.membersName = [[NSMutableArray alloc] initWithArray:[messageJson objectForKey:@"membersName"]];
-    [self setMembersName: [[NSMutableArray alloc] initWithArray:[messageJson objectForKey:@"membersName"]]];
-    self.membersId = [[NSMutableArray alloc] initWithArray:[messageJson objectForKey:@"membersId"]];
+//    [self setMembersName: [[NSMutableArray alloc] initWithArray:[messageJson objectForKey:@"membersName"]]];
+//    self.membersId = [[NSMutableArray alloc] initWithArray:[messageJson objectForKey:@"membersId"]];
+//
+//    self.removeMembers = [[NSMutableArray alloc] initWithArray:[messageJson objectForKey:@"removedMembersId"]];
+    [self setMembersName:[NSMutableArray new]];
+    self.membersId = [NSMutableArray new];
+    self.removeMembers = [NSMutableArray new];
     
-    self.removeMembers = [[NSMutableArray alloc] initWithArray:[messageJson objectForKey:@"removedMembersId"]];
     self.type = [self getShortFromJsonValue:messageJson[@"type"]];
     
     self.metadata = [[NSMutableDictionary alloc] initWithDictionary:[messageJson objectForKey:@"metadata"]];
@@ -52,13 +56,13 @@
     self.parentKey = [self getNSNumberFromJsonValue:messageJson[@"parentKey"]];
     self.parentClientKey = [self getStringFromJsonValue:messageJson[@"parentClientGroupId"]];
     
-    NSDictionary * channelDetailGroup = [messageJson objectForKey:@"groupUsers"];
+//    NSDictionary * channelDetailGroup = [messageJson objectForKey:@"groupUsers"];
     NSMutableArray * userArray = [NSMutableArray new];
-
-    for(NSDictionary* dict in channelDetailGroup){
-        ALChannelUser * channelUser = [[ALChannelUser alloc] initWithDictonary:dict];
-        [userArray addObject:channelUser];
-    }
+//
+//    for(NSDictionary* dict in channelDetailGroup){
+//        ALChannelUser * channelUser = [[ALChannelUser alloc] initWithDictonary:dict];
+//        [userArray addObject:channelUser];
+//    }
     self.groupUsers = userArray;
     
     // Channel conversation status
