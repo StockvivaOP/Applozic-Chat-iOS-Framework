@@ -39,14 +39,12 @@
         paramString = [paramString stringByAppendingFormat:@"&endTime=%@",self.endTimeStamp.stringValue];
     }
     
-    if( self.isFirstCall )
-    {
-        self.startTimeStamp=[NSNumber numberWithInteger:1];
-    }
-    
     if(self.startTimeStamp != nil )
     {
          paramString = [paramString stringByAppendingFormat:@"&startTime=%@",self.startTimeStamp.stringValue];
+    }else if( self.isFirstCall )
+    {
+        self.startTimeStamp=[NSNumber numberWithInteger:1];
     }
     
    
