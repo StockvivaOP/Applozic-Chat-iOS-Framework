@@ -859,17 +859,16 @@ static ALMessageClientService *alMsgClientService;
     return [alMsgDBService createMessageEntity:dbMessage];
 }
 
-+(void)addOpenGroupMessage:(ALMessage*)alMessage withDelegate:(id<ApplozicUpdatesDelegate>)delegate{
-    {
-
-        if(!alMessage){
-            return;
-        }
-        dispatch_async(dispatch_get_global_queue( DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^(void){
-            NSMutableArray * singlemessageArray = [[NSMutableArray alloc] init];
-            [singlemessageArray addObject:alMessage];
-            for (int i=0; i<singlemessageArray.count; i++) {
-                ALMessage * message = singlemessageArray[i];
++(void)addOpenGroupMessage:(ALMessage*)alMessage withDelegate:(id<ApplozicUpdatesDelegate>)delegate
+{
+    if(!alMessage){
+        return;
+    }
+    dispatch_async(dispatch_get_global_queue( DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^(void){
+        NSMutableArray * singlemessageArray = [[NSMutableArray alloc] init];
+        [singlemessageArray addObject:alMessage];
+        for (int i=0; i<singlemessageArray.count; i++) {
+            ALMessage * message = singlemessageArray[i];
 //                if (message.groupId != nil && message.contentType == ALMESSAGE_CHANNEL_NOTIFICATION) {
 //                    ALChannelService *channelService = [[ALChannelService alloc] init];
 //                    [channelService syncCallForChannelWithDelegate:delegate];
@@ -877,24 +876,23 @@ static ALMessageClientService *alMsgClientService;
 //                        [singlemessageArray removeObjectAtIndex:i];
 //                    }
 //                }
-                if(delegate){
-                    dispatch_async(dispatch_get_main_queue(), ^(void){
-                        if([message.type  isEqual: OUT_BOX]){
-                            [delegate onMessageSent: message];
-                        }else{
-                            [delegate onMessageReceived: message];
-                        }
-                    });
-                }
-            }
-            
-            [ALUserService processContactFromMessages:singlemessageArray withCompletion:^{
+            if(delegate){
                 dispatch_async(dispatch_get_main_queue(), ^(void){
-                    [[NSNotificationCenter defaultCenter] postNotificationName:NEW_MESSAGE_NOTIFICATION object:singlemessageArray userInfo:nil];
+                    if([message.type  isEqual: OUT_BOX]){
+                        [delegate onMessageSent: message];
+                    }else{
+                        [delegate onMessageReceived: message];
+                    }
                 });
-            }];
-        });
-    }
+            }
+        }
+        
+        [ALUserService processContactFromMessages:singlemessageArray withCompletion:^{
+            dispatch_async(dispatch_get_main_queue(), ^(void){
+                [[NSNotificationCenter defaultCenter] postNotificationName:NEW_MESSAGE_NOTIFICATION object:singlemessageArray userInfo:nil];
+            });
+        }];
+    });
 }
 
 -(void) getLatestMessages:(BOOL)isNextPage withOnlyGroups:(BOOL)isGroup withCompletionHandler: (void(^)(NSMutableArray * messageList, NSError *error)) completion{
