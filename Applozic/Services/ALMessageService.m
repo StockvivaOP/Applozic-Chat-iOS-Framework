@@ -865,31 +865,31 @@ static ALMessageClientService *alMsgClientService;
         if(!alMessage){
             return;
         }
-
-        NSMutableArray * singlemessageArray = [[NSMutableArray alloc] init];
-        [singlemessageArray addObject:alMessage];
-        for (int i=0; i<singlemessageArray.count; i++) {
-            ALMessage * message = singlemessageArray[i];
-            if (message.groupId != nil && message.contentType == ALMESSAGE_CHANNEL_NOTIFICATION) {
-                ALChannelService *channelService = [[ALChannelService alloc] init];
-                [channelService syncCallForChannelWithDelegate:delegate];
-                if([message isMsgHidden]) {
-                    [singlemessageArray removeObjectAtIndex:i];
+        dispatch_async(dispatch_get_main_queue(), ^(void){
+            NSMutableArray * singlemessageArray = [[NSMutableArray alloc] init];
+            [singlemessageArray addObject:alMessage];
+            for (int i=0; i<singlemessageArray.count; i++) {
+                ALMessage * message = singlemessageArray[i];
+//                if (message.groupId != nil && message.contentType == ALMESSAGE_CHANNEL_NOTIFICATION) {
+//                    ALChannelService *channelService = [[ALChannelService alloc] init];
+//                    [channelService syncCallForChannelWithDelegate:delegate];
+//                    if([message isMsgHidden]) {
+//                        [singlemessageArray removeObjectAtIndex:i];
+//                    }
+//                }
+                if(delegate){
+                    if([message.type  isEqual: OUT_BOX]){
+                        [delegate onMessageSent: message];
+                    }else{
+                        [delegate onMessageReceived: message];
+                    }
                 }
             }
-            if(delegate){
-                if([message.type  isEqual: OUT_BOX]){
-                    [delegate onMessageSent: message];
-                }else{
-                    [delegate onMessageReceived: message];
-                }
-            }
-        }
 
-        [ALUserService processContactFromMessages:singlemessageArray withCompletion:^{
-            [[NSNotificationCenter defaultCenter] postNotificationName:NEW_MESSAGE_NOTIFICATION object:singlemessageArray userInfo:nil];
-
-        }];
+            [ALUserService processContactFromMessages:singlemessageArray withCompletion:^{
+                [[NSNotificationCenter defaultCenter] postNotificationName:NEW_MESSAGE_NOTIFICATION object:singlemessageArray userInfo:nil];
+            }];
+        });
 
     }
 }
