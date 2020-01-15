@@ -51,13 +51,13 @@
     }
     self.messageList = theMessagesArray;
     
-    NSDictionary * theUserDetailsDict = [messagejson valueForKey:@"userDetails"];
-
-    for (NSDictionary * theDictionary in theUserDetailsDict)
-    {
-        ALUserDetail * alUserDetail = [[ALUserDetail alloc] initWithDictonary:theDictionary];
-        [theUserDetailArray addObject:alUserDetail];
-    }
+//    NSDictionary * theUserDetailsDict = [messagejson valueForKey:@"userDetails"];
+//
+//    for (NSDictionary * theDictionary in theUserDetailsDict)
+//    {
+//        ALUserDetail * alUserDetail = [[ALUserDetail alloc] initWithDictonary:theDictionary];
+//        [theUserDetailArray addObject:alUserDetail];
+//    }
     
     NSDictionary * theConversationProxyDict = [messagejson valueForKey:@"conversationPxys"];
     
