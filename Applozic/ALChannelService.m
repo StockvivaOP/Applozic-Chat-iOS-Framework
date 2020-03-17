@@ -1076,4 +1076,50 @@
     [[NSNotificationCenter defaultCenter] postNotificationName:@"Update_unread_count" object:dict];
 }
 
+#pragma mark - stockviva tag
+-(void) getSVCustomChannelInformation:(NSNumber*) channelId withHashid:(NSString *) hashId withName:(NSString*) name withProfileImageUrl:(NSString*) imageUrl withType:(int) type withCompletion:(void (^)(ALChannel *alChannel3, Boolean isCalledAPI)) completion {
+    
+    //no hash id
+    if ([hashId isEqualToString:@""] || channelId.intValue == 0 ) {
+        //get channel
+        [ALChannelClientService getChannelInfo:channelId orClientChannelKey:hashId withCompletion:^(NSError *error, ALChannel *alChannel2) {
+            
+            if(!error)
+            {
+                ALChannelDBService *dbService = [[ALChannelDBService alloc] init];
+                [dbService createChannel:alChannel2];
+            }
+            completion (alChannel2, true);
+        }];
+        return;
+    }
+    
+    //get channel
+    ALChannel* _alChannel = [self fetchChannelWithClientChannelKey:hashId];
+    if(_alChannel)
+    {
+        completion (_alChannel, false);;
+        return;
+    }
+    
+    //create channel
+    NSMutableDictionary* _dict = [NSMutableDictionary init];
+    [_dict setValue:channelId forKey:@"id"];
+    [_dict setValue:hashId forKey:@"clientGroupId"];
+    [_dict setValue:name forKey:@"name"];
+    [_dict setValue:imageUrl forKey:@"imageUrl"];
+    [_dict setValue:0 forKey:@"unreadCount"];
+    [_dict setValue:0 forKey:@"userCount"];
+    [_dict setValue:[NSNumber numberWithInt:type] forKey:@"type"];
+    [_dict setValue:[NSArray new] forKey:@"metadata"];
+    
+    //save to db
+    _alChannel = [[ALChannel alloc] initWithDictonary:_dict];
+    ALChannelDBService* _dbService = [[ALChannelDBService alloc] init];
+    [_dbService createChannel:_alChannel];
+    
+    completion (_alChannel, false);
+    return;
+}
+
 @end
