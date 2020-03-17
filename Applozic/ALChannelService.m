@@ -1103,7 +1103,7 @@
     }
     
     //create channel
-    NSMutableDictionary* _dict = [NSMutableDictionary init];
+    NSMutableDictionary* _dict = [NSMutableDictionary dictionary];
     [_dict setValue:channelId forKey:@"id"];
     [_dict setValue:hashId forKey:@"clientGroupId"];
     [_dict setValue:name forKey:@"name"];
@@ -1111,7 +1111,7 @@
     [_dict setValue:0 forKey:@"unreadCount"];
     [_dict setValue:0 forKey:@"userCount"];
     [_dict setValue:[NSNumber numberWithInt:type] forKey:@"type"];
-    [_dict setValue:[NSArray new] forKey:@"metadata"];
+    [_dict setValue:[NSDictionary dictionary] forKey:@"metadata"];
     
     //save to db
     _alChannel = [[ALChannel alloc] initWithDictonary:_dict];
