@@ -124,8 +124,8 @@
 {
     NSMutableDictionary* _dict = [NSMutableDictionary dictionary];
     [_dict setValue:@"application/json" forKey:@"Content-Type"];
-    [_dict setValue:[ALUserDefaultsHandler getPassword] forKey:@"Access-Token"];
-    [_dict setValue:[ALUserDefaultsHandler getAppModuleName] forKey:@"App-Module-Name"];
+    //[_dict setValue:[ALUserDefaultsHandler getPassword] forKey:@"Access-Token"];
+    //[_dict setValue:[ALUserDefaultsHandler getAppModuleName] forKey:@"App-Module-Name"];
     [_dict setValue:[ALUserDefaultsHandler getDeviceKeyString] forKey:@"Device-Key"];
 
     
