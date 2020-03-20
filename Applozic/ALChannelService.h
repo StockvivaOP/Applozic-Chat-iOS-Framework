@@ -642,4 +642,8 @@
 
 -(void)createChannelWithChannelInfo:(ALChannelInfo*)channelInfo withCompletion:(void(^)(ALChannelCreateResponse *response, NSError *error))completion;
 
+
+//stockviva tag
+-(void) getSVCustomChannelInformation:(NSNumber* _Nonnull) channelId withHashid:(NSString * _Nonnull) hashId withName:(NSString* _Nonnull) name withProfileImageUrl:(NSString* _Nullable) imageUrl withType:(int) type withCompletion:(void (^ _Nonnull)(ALChannel * _Nullable alChannel3, Boolean isCalledAPI)) completion;
+
 @end

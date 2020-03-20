@@ -119,5 +119,30 @@
     }
 }
 
+//stockviva
++(NSDictionary*) getGlobalHeader
+{
+    NSMutableDictionary* _dict = [NSMutableDictionary dictionary];
+    [_dict setValue:@"application/json" forKey:@"Content-Type"];
+    //[_dict setValue:[ALUserDefaultsHandler getPassword] forKey:@"Access-Token"];
+    //[_dict setValue:[ALUserDefaultsHandler getAppModuleName] forKey:@"App-Module-Name"];
+    [_dict setValue:[ALUserDefaultsHandler getDeviceKeyString] forKey:@"Device-Key"];
+
+    
+    [_dict setValue:[ALUserDefaultsHandler getApplicationKey] forKey:@"Application-Key"];
+    [_dict setValue:@"true" forKey:@"UserId-Enabled"];
+    [_dict setValue:@"1" forKey:@"Source"];
+    
+    NSString *authStr = [NSString stringWithFormat:@"%@:%@",[ALUserDefaultsHandler getUserId], [ALUserDefaultsHandler getDeviceKeyString]];
+    NSData *authData = [authStr dataUsingEncoding:NSUTF8StringEncoding];
+    NSString *authString = [NSString stringWithFormat:@"Basic %@", [authData base64EncodedStringWithOptions:0]];
+    [_dict setValue:authString forKey:@"Authorization"];
+    [_dict setValue:authString forKey:@"Application-User"];
+    
+    ALSLog(ALLoggerSeverityInfo, @"Basic string...%@",authString);
+    
+    return _dict;
+}
+
 @end
 
