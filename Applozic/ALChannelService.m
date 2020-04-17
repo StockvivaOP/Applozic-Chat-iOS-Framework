@@ -44,10 +44,10 @@ dispatch_queue_t channelUserbackgroundQueue;
     [alChannelDBService insertChannel:alChannelFeed.channelFeedsList];
 
     //callForChannelProxy inserting in DB...
-    ALConversationService *alConversationService = [[ALConversationService alloc] init];
-    [alConversationService addConversations:alChannelFeed.conversationProxyList];
-
-     [self saveChannelUsersAndChannelDetails:alChannelFeed.channelFeedsList calledFromMessageList:YES];
+//    ALConversationService *alConversationService = [[ALConversationService alloc] init];
+//    [alConversationService addConversations:alChannelFeed.conversationProxyList];
+//
+//     [self saveChannelUsersAndChannelDetails:alChannelFeed.channelFeedsList calledFromMessageList:YES];
 
 }
 
@@ -1071,9 +1071,9 @@ dispatch_queue_t channelUserbackgroundQueue;
     [channelDBService createChannelEntity:channel];
     [theDBHandler.managedObjectContext save:nil];
 
-    NSMutableArray <ALChannel *> *channelFeedArray = [[NSMutableArray alloc] init];
-    [channelFeedArray addObject:channel];
-    [self saveChannelUsersAndChannelDetails:channelFeedArray  calledFromMessageList:isFromMessageList];
+//    NSMutableArray <ALChannel *> *channelFeedArray = [[NSMutableArray alloc] init];
+//    [channelFeedArray addObject:channel];
+//    [self saveChannelUsersAndChannelDetails:channelFeedArray  calledFromMessageList:isFromMessageList];
 }
 
 - (void)saveChannelUsersAndChannelDetails:(NSMutableArray <ALChannel *>*) channelFeedsList calledFromMessageList:(BOOL)isFromMessageList {
