@@ -75,10 +75,10 @@
 #import "ALUploadTask.h"
 #import "ALDownloadTask.h"
 #import "ALMyContactMessageCell.h"
+#import "ALNotificationHelper.h"
 
-#define MQTT_MAX_RETRY 3
-#define NEW_MESSAGE_NOTIFICATION @"newMessageNotification"
-
+static int const MQTT_MAX_RETRY = 3;
+static CGFloat const TEXT_VIEW_TO_MESSAGE_VIEW_RATIO = 1.4;
 NSString * const ThirdPartyDetailVCNotification = @"ThirdPartyDetailVCNotification";
 NSString * const ThirdPartyDetailVCNotificationNavigationVC = @"ThirdPartyDetailVCNotificationNavigationVC";
 NSString * const ThirdPartyDetailVCNotificationALContact = @"ThirdPartyDetailVCNotificationALContact";
@@ -189,10 +189,8 @@ NSString * const ThirdPartyProfileTapNotification = @"ThirdPartyProfileTapNotifi
 
     // Setup quick recording if it's enabled in the settings
     if([ALApplozicSettings isQuickAudioRecordingEnabled]) {
-        if (@available(iOS 9.0, *) && [ALApplozicSettings isNewAudioDesignEnabled]) {
+        if ([ALApplozicSettings isNewAudioDesignEnabled]) {
             isNewAudioDesignEnabled = YES;
-        } else {
-            isNewAudioDesignEnabled = NO;
         }
         [self setUpSoundRecordingView];
         [self showMicButton];
@@ -232,8 +230,8 @@ NSString * const ThirdPartyProfileTapNotification = @"ThirdPartyProfileTapNotifi
 
     }];
     if(self.alMessage){
+        self.displayName = nil;
         [self handleMessageForward:self.alMessage];
-
     }
 }
 
@@ -315,8 +313,8 @@ NSString * const ThirdPartyProfileTapNotification = @"ThirdPartyProfileTapNotifi
     [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(updateMessageSendStatus:)
                                                  name:@"UPDATE_MESSAGE_SEND_STATUS" object:nil];
 
-    [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(appEntersForeground:)
-                                                 name:@"APP_ENTER_IN_FOREGROUND" object:nil];
+    [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(onAppDidBecomeActive:)
+                                                 name:UIApplicationDidBecomeActiveNotification object:nil];
 
     [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(updateChannelName)
                                                  name:@"UPDATE_CHANNEL_NAME" object:nil];
@@ -325,7 +323,7 @@ NSString * const ThirdPartyProfileTapNotification = @"ThirdPartyProfileTapNotifi
                                                       name:@"UPDATE_USER_FREEZE_CHANNEL_ADD_REMOVING" object:nil];
 
     [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(didEnterBackGround)
-                                                 name:@"APP_ENTER_IN_BACKGROUND" object:nil];
+                                                 name:UIApplicationDidEnterBackgroundNotification object:nil];
     [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(messageDeletedAPPLOZIC05Handler:)
                                                  name:@"NOTIFY_MESSAGE_DELETED" object:nil];
 
@@ -348,7 +346,6 @@ NSString * const ThirdPartyProfileTapNotification = @"ThirdPartyProfileTapNotifi
         }
     }
 
-    [self serverCallForLastSeen];
     [self handleAttachmentButtonVisibility];
 
     [self setTitle];
@@ -395,6 +392,13 @@ NSString * const ThirdPartyProfileTapNotification = @"ThirdPartyProfileTapNotifi
 
     [self loadMessagesForOpenChannel];
 
+    if (![self isGroup]) {
+        ALContact *contact = [[[ALContactService alloc] init] loadContactByKey:@"userId" value:self.contactIds];
+        [self enableOrDisableChat:contact.isChatDisabled];
+    } else {
+        [self disableChatViewInteraction:NO withPlaceholder:nil];
+    }
+    [self serverCallForLastSeen];
 
 }
 
@@ -486,9 +490,10 @@ NSString * const ThirdPartyProfileTapNotification = @"ThirdPartyProfileTapNotifi
     [[NSNotificationCenter defaultCenter] removeObserver:self name:@"USER_BLOCK_NOTIFICATION" object:nil];
     [[NSNotificationCenter defaultCenter] removeObserver:self name:@"USER_UNBLOCK_NOTIFICATION" object:nil];
     [[NSNotificationCenter defaultCenter] removeObserver:self name:@"UPDATE_MESSAGE_SEND_STATUS" object:nil];
-    [[NSNotificationCenter defaultCenter] removeObserver:self name:@"appCameInForeground" object:nil];
-    [[NSNotificationCenter defaultCenter] removeObserver:self name:@"APP_ENTER_IN_BACKGROUND" object:nil];
+    [[NSNotificationCenter defaultCenter] removeObserver:self name:UIApplicationDidEnterBackgroundNotification object:nil];
     [[NSNotificationCenter defaultCenter] removeObserver:self name:@"UPDATE_USER_FREEZE_CHANNEL_ADD_REMOVING" object:nil];
+    [[NSNotificationCenter defaultCenter] removeObserver:self name:UIApplicationDidBecomeActiveNotification object:nil];
+
 
     [self.sendMessageTextView resignFirstResponder];
     [self.label setHidden:YES];
@@ -542,7 +547,7 @@ NSString * const ThirdPartyProfileTapNotification = @"ThirdPartyProfileTapNotifi
     // save msg to db
     theMessage.msgDBObjectId = [self saveMessageToDatabase:theMessage];
 
-    [self sendMessage:theMessage ];
+    [self sendMessage:theMessage withUserDisplayName:self.displayName];
     [self.mTableView reloadData];
     [self setRefreshMainView:TRUE];
     [self scrollTableViewToBottomWithAnimation:YES];
@@ -694,7 +699,7 @@ NSString * const ThirdPartyProfileTapNotification = @"ThirdPartyProfileTapNotifi
     }
 }
 
--(void)appEntersForeground:(id)notification
+-(void)onAppDidBecomeActive:(id)notification
 {
 // Updating Last Seen via Server Call
     [self serverCallForLastSeen];
@@ -1280,7 +1285,7 @@ NSString * const ThirdPartyProfileTapNotification = @"ThirdPartyProfileTapNotifi
     //SEND MESSAGE
     [[self.alMessageWrapper getUpdatedMessageArray] addObject:message];
     [self showNoConversationLabel];
-    [self sendMessage:message];
+    [self sendMessage:message withUserDisplayName:nil];
     [self.mTableView reloadData];       //RELOAD MANUALLY SINCE NO NETWORK ERROR
     [self setRefreshMainView:TRUE];
     [self scrollTableViewToBottomWithAnimation:YES];
@@ -1303,6 +1308,8 @@ NSString * const ThirdPartyProfileTapNotification = @"ThirdPartyProfileTapNotifi
     message.sentToServer = FALSE;
     message.status = @1;
 
+    self.displayName = nil;
+
     if(message.isAReplyMessage){
         message.metadata = nil;
     }
@@ -1319,8 +1326,7 @@ NSString * const ThirdPartyProfileTapNotification = @"ThirdPartyProfileTapNotifi
     self.mTotalCount = self.mTotalCount+1;
     self.startIndex = self.startIndex + 1;
 
-    [self sendMessage:message messageAtIndex: [[self.alMessageWrapper getUpdatedMessageArray] count]];
-
+    [self sendMessage:message messageAtIndex: [[self.alMessageWrapper getUpdatedMessageArray] count] withUserDisplayName:nil];
 
     [self.mTableView reloadData];       //RELOAD MANUALLY SINCE NO NETWORK ERROR
     [self setRefreshMainView:TRUE];
@@ -1365,6 +1371,7 @@ NSString * const ThirdPartyProfileTapNotification = @"ThirdPartyProfileTapNotifi
             [[ALMessageService sharedInstance] handleMessageFailedStatus:theMessage];
             return;
         }
+        [self updateUserDisplayNameWithMessage:theMessage withDisplayName:self.displayName];
         completion(message, error);
         [self.mTableView reloadData];
         [self setRefreshMainView:TRUE];
@@ -1381,7 +1388,7 @@ NSString * const ThirdPartyProfileTapNotification = @"ThirdPartyProfileTapNotifi
     {
         ALMessage * locationMessage = [self formLocationMessage:latLongString];
         [[self.alMessageWrapper getUpdatedMessageArray] addObject:locationMessage];
-        [self sendMessage:locationMessage];
+        [self sendMessage:locationMessage withUserDisplayName:self.displayName];
         [self.mTableView reloadData];       //RELOAD MANUALLY SINCE NO NETWORK ERROR
         [self setRefreshMainView:TRUE];
         [self scrollTableViewToBottomWithAnimation:YES];
@@ -1487,6 +1494,28 @@ NSString * const ThirdPartyProfileTapNotification = @"ThirdPartyProfileTapNotifi
             return YES;
         }
     }
+
+    NSString * restrictedMessageRegexPattern =   [ALApplozicSettings getRestrictedMessageRegexPattern];
+
+    if(restrictedMessageRegexPattern){
+        @try {
+            NSError *error = nil;
+            NSRegularExpression* regex = [NSRegularExpression regularExpressionWithPattern: restrictedMessageRegexPattern options:NSRegularExpressionCaseInsensitive error:&error];
+
+            NSArray* matches = [regex matchesInString:msgText options:0 range: NSMakeRange(0, msgText.length)];
+
+            for (NSTextCheckingResult* match in matches) {
+                NSString* matchText = [msgText substringWithRange:[match range]];
+                if(matchText != nil && matchText.length > 0 ){
+                    return YES;
+                }
+            }
+
+        }
+        @catch (NSException *exception) {
+            ALSLog(ALLoggerSeverityError, @"Exception in matching string %@",exception.description);
+        }
+    }
     return NO;
 }
 
@@ -1548,7 +1577,7 @@ NSString * const ThirdPartyProfileTapNotification = @"ThirdPartyProfileTapNotifi
     [self.sendMessageTextView setText:nil];
     self.mTotalCount = self.mTotalCount + 1;
     self.startIndex = self.startIndex + 1;
-    [self sendMessage:theMessage];
+    [self sendMessage:theMessage withUserDisplayName:self.displayName];
 
     if(isAudioRecordingEnabled) {
         [self showMicButton];
@@ -2316,7 +2345,7 @@ NSString * const ThirdPartyProfileTapNotification = @"ThirdPartyProfileTapNotifi
     theMessage.contentType = ALMESSAGE_CONTENT_DEFAULT;
     theMessage.groupId = self.channelKey;
     theMessage.conversationId  = self.conversationId;
-    theMessage.source = SOURCE_IOS;
+    theMessage.source = AL_SOURCE_IOS;
 //    theMessage.metadata = [self getNewMetaDataDictionary]; // EXAMPLE FOR META DATA
 
     if(self.messageReplyId){
@@ -2360,6 +2389,16 @@ NSString * const ThirdPartyProfileTapNotification = @"ThirdPartyProfileTapNotifi
 #pragma mark - VIEW HELPER METHODS
 //==============================================================================================================================================
 
+-(void) enableLoadMoreOption:(BOOL) enable {
+    NSString *chatId;
+    if (self.conversationId && [ALApplozicSettings getContextualChatOption]) {
+        chatId = [self.conversationId stringValue];
+    } else {
+        chatId = self.channelKey ? [self.channelKey stringValue] : self.contactIds;
+    }
+    [ALUserDefaultsHandler setShowLoadEarlierOption:enable forContactId:chatId];
+}
+
 -(void)loadChatView
 {
     [self setTitle];
@@ -2392,6 +2431,7 @@ NSString * const ThirdPartyProfileTapNotification = @"ThirdPartyProfileTapNotifi
     [theRequest setSortDescriptors:@[[NSSortDescriptor sortDescriptorWithKey:@"createdAt" ascending:NO]]];
 
     NSArray * theArray = [theDbHandler.managedObjectContext executeFetchRequest:theRequest error:nil];
+    [self enableLoadMoreOption: !(theArray.count < 50)];
     ALMessageDBService* messageDBService = [[ALMessageDBService alloc]init];
 
     NSMutableArray *tempArray = [[NSMutableArray alloc] init];
@@ -2574,9 +2614,13 @@ NSString * const ThirdPartyProfileTapNotification = @"ThirdPartyProfileTapNotifi
     }
 }
 
--(void)showFullScreen:(UIViewController*)uiController
+-(void)showImagePreviewWithFilePath:(NSString *)filePath
 {
-    [self presentViewController:uiController animated:YES completion:nil];
+    UIImage *image =   [ALUtilityClass getImageFromFilePath:filePath];
+    if(image){
+        ALPreviewPhotoViewController * contrller = [[ALPreviewPhotoViewController alloc] initWithImage:image pathExtension:filePath.pathExtension];
+        [self.navigationController pushViewController:contrller animated:NO];
+    }
 }
 
 -(void) thumbnailDownload:(NSString *) key{
@@ -2671,12 +2715,12 @@ NSString * const ThirdPartyProfileTapNotification = @"ThirdPartyProfileTapNotifi
         theMessage.fileMeta.name = [NSString stringWithFormat:@"%@-5-%@",self.contactIds, filePath.lastPathComponent];
     }
 
-    CFStringRef pathExtension = (__bridge_retained CFStringRef)[filePath pathExtension];
-    CFStringRef type = UTTypeCreatePreferredIdentifierForTag(kUTTagClassFilenameExtension, pathExtension, NULL);
-    CFRelease(pathExtension);
-    NSString *mimeType = (__bridge_transfer NSString *)UTTypeCopyPreferredTagWithClass(type, kUTTagClassMIMEType);
-
+    NSString *mimeType = [ALUtilityClass fileMIMEType:filePath];
+    if(!mimeType) {
+        return;
+    }
     theMessage.fileMeta.contentType = mimeType;
+
     if( theMessage.contentType == ALMESSAGE_CONTENT_VCARD)
     {
         theMessage.fileMeta.contentType = @"text/x-vcard";
@@ -2920,6 +2964,7 @@ NSString * const ThirdPartyProfileTapNotification = @"ThirdPartyProfileTapNotifi
                 [self.navigationController pushViewController:launchChat animated:YES];
             } else {
                 ALBaseNavigationViewController *controller = [ALCustomPickerViewController makeInstanceWithDelegate:self];
+                controller.modalPresentationStyle = UIModalPresentationFullScreen;
                 [self presentViewController:controller animated:NO completion:nil];
             }
         }]];
@@ -3039,6 +3084,7 @@ style:UIAlertActionStyleDefault handler:^(UIAlertAction *action) {
                 ALAudioAttachmentViewController *audioVC = (ALAudioAttachmentViewController *)[storyboard
                                                                                                instantiateViewControllerWithIdentifier:@"AudioAttachment"];
                 audioVC.audioAttchmentDelegate = self;
+                audioVC.modalPresentationStyle = UIModalPresentationFullScreen;
                 [self.navigationController pushViewController:audioVC animated:YES];
             }
             else
@@ -3159,11 +3205,11 @@ style:UIAlertActionStyleDefault handler:^(UIAlertAction *action) {
 }
 
 
--(void)sendMessage:(ALMessage *)theMessage{
-    [self sendMessage:theMessage messageAtIndex:0];
+-(void)sendMessage:(ALMessage *)theMessage withUserDisplayName:(NSString *) displayName {
+    [self sendMessage:theMessage messageAtIndex:0 withUserDisplayName:displayName];
 }
 
--(void)sendMessage:(ALMessage *)theMessage messageAtIndex:(NSUInteger) messageIndex{
+-(void)sendMessage:(ALMessage *)theMessage messageAtIndex:(NSUInteger) messageIndex withUserDisplayName:(NSString *) displayName {
     [self resetMessageReplyView];
     [[ALMessageService sharedInstance] sendMessages:theMessage withCompletion:^(NSString *message, NSError *error) {
 
@@ -3178,9 +3224,9 @@ style:UIAlertActionStyleDefault handler:^(UIAlertAction *action) {
             [[self.alMessageWrapper getUpdatedMessageArray]replaceObjectAtIndex: messageIndex-1 withObject:theMessage];
 
         }
-
         [self.mTableView reloadData];
         [self setRefreshMainView:YES];
+        [self updateUserDisplayNameWithMessage:theMessage withDisplayName:displayName];
     }];
 }
 
@@ -3367,8 +3413,19 @@ style:UIAlertActionStyleDefault handler:^(UIAlertAction *action) {
     {
         return;
     }
+
+
     ALNotificationView * alnotification = [[ALNotificationView alloc] initWithAlMessage:alMessage withAlertMessage:alertValue];
-    [alnotification nativeNotification:self];
+    [alnotification showNativeNotificationWithcompletionHandler:^(BOOL show) {
+
+        ALNotificationHelper * helper = [[ALNotificationHelper alloc]init];
+
+        if ([helper isApplozicViewControllerOnTop]) {
+
+            [helper handlerNotificationClick:alMessage.contactIds withGroupId:alMessage.groupId withConversationId:alMessage.conversationId notificationTapActionDisable:[ALApplozicSettings isInAppNotificationTapDisabled]];
+        }
+
+    }];
 }
 
 //===============================================================================================================================================
@@ -3425,6 +3482,51 @@ style:UIAlertActionStyleDefault handler:^(UIAlertAction *action) {
     [self loadChatView];
     [self setCallButtonInNavigationBar];
     [self showNoConversationLabel];
+}
+
+-(void)refreshViewOnNotificationTap:(NSString *)userId withChannelKey:(NSNumber *)channelKey withConversationId:(NSNumber *)conversationId {
+
+    if (![self isChatOpenForSameConversationWithUserId:userId withGroupId:channelKey]) {
+        self.displayName = nil;
+    }
+
+    [self unSubscrbingChannel];
+    self.alChannel = nil;
+    self.alContact = nil;
+    self.contactIds = userId;
+    self.conversationId = conversationId;
+    self.channelKey = channelKey;
+    [self subscrbingChannel];
+    
+    dispatch_async(dispatch_get_main_queue(), ^{
+
+        [self.mTableView setUserInteractionEnabled:NO];
+        [[self.alMessageWrapper getUpdatedMessageArray] removeAllObjects];
+        [self.mTableView reloadData];
+        [self.mTableView setUserInteractionEnabled:YES];
+        [self setCallButtonInNavigationBar];
+        self.startIndex = 0;
+
+        NSString *chatId = self.channelKey != nil ? self.channelKey.stringValue : self.contactIds;
+
+        if ([ALUserDefaultsHandler isServerCallDoneForMSGList:chatId]) {
+            [self fetchMessageFromDB];
+            [self loadChatView];
+        } else {
+            [self showNoConversationLabel];
+            [self setTitle];
+            [self processLoadEarlierMessages:YES];
+        }
+        [self markConversationRead];;
+    });
+}
+
+-(BOOL)isChatOpenForSameConversationWithUserId:(NSString *) userId withGroupId:(NSNumber *) groupId{
+
+    return (self.channelKey != nil && groupId != nil &&
+            [groupId.stringValue isEqualToString:self.channelKey.stringValue]) ||
+    (self.channelKey == nil && self.contactIds != nil &&
+     userId != nil && [self.contactIds isEqualToString:userId]);
 }
 
 -(void)reloadViewfor3rdParty
@@ -3492,18 +3594,7 @@ style:UIAlertActionStyleDefault handler:^(UIAlertAction *action) {
         if(!error)
         {
             self.loadEarlierAction.hidden = YES;
-            if(messages.count < 50)
-            {
-                if(self.conversationId && [ALApplozicSettings getContextualChatOption])
-                {
-                    [ALUserDefaultsHandler setShowLoadEarlierOption:NO forContactId:[self.conversationId stringValue]];
-                }
-                else
-                {
-                    NSString * IDs = (self.channelKey ? [self.channelKey stringValue] : self.contactIds);
-                    [ALUserDefaultsHandler setShowLoadEarlierOption:NO forContactId:IDs];
-                }
-            }
+            [self enableLoadMoreOption:(messages.count > 0)];
 
             if(messages.count == 0)
             {
@@ -3590,6 +3681,37 @@ style:UIAlertActionStyleDefault handler:^(UIAlertAction *action) {
     }];
 }
 
+-(void) enableOrDisableChat:(BOOL)disable {
+    if (ALUserDefaultsHandler.isChatDisabled) {
+        /// User has disabled chat.
+        NSString *disableMessage = NSLocalizedStringWithDefaultValue(@"YouDisabledChat", [ALApplozicSettings getLocalizableName], [NSBundle mainBundle], @"You have disabled chat", @"");
+        [self disableChatViewInteraction: YES withPlaceholder: disableMessage];
+    } else if (disable) {
+        /// Chat is disabled for this user.
+        NSString *disableMessage = NSLocalizedStringWithDefaultValue(@"UserDisabledChat", [ALApplozicSettings getLocalizableName], [NSBundle mainBundle], @"User has disabled his/her chat", @"");
+        [self disableChatViewInteraction: YES withPlaceholder: disableMessage];
+    } else {
+        [self disableChatViewInteraction:NO withPlaceholder:nil];
+    }
+}
+
+-(void) disableChatViewInteraction:(BOOL) disable withPlaceholder: (NSString *) text{
+    if (text) {
+        self.placeHolderTxt = text;
+        [self.sendMessageTextView setText:self.placeHolderTxt];
+        [self.sendMessageTextView setTextColor:self.placeHolderColor];
+    } else if (![self.sendMessageTextView isFirstResponder]) {
+        self.placeHolderTxt = NSLocalizedStringWithDefaultValue(@"placeHolderText", [ALApplozicSettings getLocalizableName], [NSBundle mainBundle], @"Write a Message...", @"");
+        [self.sendMessageTextView setText:self.placeHolderTxt];
+        [self.sendMessageTextView setTextColor:self.placeHolderColor];
+    }
+
+    [self.sendMessageTextView setUserInteractionEnabled:!disable];
+    [self.sendButton setUserInteractionEnabled:!disable];
+    [micButton setUserInteractionEnabled:!disable];
+    [self.attachmentOutlet setUserInteractionEnabled:!disable];
+}
+
 -(void)serverCallForLastSeen
 {
     if([self isGroup] && self.alChannel.type != GROUP_OF_TWO)
@@ -3608,6 +3730,7 @@ style:UIAlertActionStyleDefault handler:^(UIAlertAction *action) {
             [self updateLastSeenAtStatus:alUserDetail];
             [self setCallButtonInNavigationBar];
             [self checkUserDeleted];
+            [self enableOrDisableChat: alUserDetail.isChatDisabled];
         }
         else
         {
@@ -4058,7 +4181,11 @@ style:UIAlertActionStyleDefault handler:^(UIAlertAction *action) {
     {
         ALContactService *contactService = [ALContactService new];
         self.alContact = [contactService loadContactByKey:@"userId" value:userDetail.userId];
+        BOOL isUserDeleted = self.alContact.deletedAtTime ? YES : NO;
+        [self freezeView:isUserDeleted];
+        [self.label setHidden:isUserDeleted];
         [titleLabelButton setTitle:[self.alContact getDisplayName] forState:UIControlStateNormal];
+        [self enableOrDisableChat:self.alContact.isChatDisabled];
     }
     [self.mTableView reloadData];
 }
@@ -4135,6 +4262,7 @@ style:UIAlertActionStyleDefault handler:^(UIAlertAction *action) {
     {
         ALSLog(ALLoggerSeverityInfo, @"MQTT connection closed, subscribing again: %lu", (long)_mqttRetryCount);
         [self.mqttObject subscribeToConversation];
+        self.mqttObject.mqttConversationDelegate = self;
         [self subscrbingChannel];
         self.mqttRetryCount++;
     }
@@ -4391,7 +4519,7 @@ style:UIAlertActionStyleDefault handler:^(UIAlertAction *action) {
 
     }else{
 
-        if([message.type isEqualToString:OUT_BOX]){
+        if([message.type isEqualToString:AL_OUT_BOX]){
             self.replyUserName.text = @"You";
         }else{
             ALContactDBService  *aLContactDBService = [ALContactDBService new];
@@ -4783,6 +4911,7 @@ style:UIAlertActionStyleDefault handler:^(UIAlertAction *action) {
             [self.alMessageWrapper getUpdatedMessageArray][path.row] = alMessage;
             [self.mTableView reloadRowsAtIndexPaths:@[path] withRowAnimation:UITableViewRowAnimationNone];
           }
+        [self updateUserDisplayNameWithMessage:alMessage withDisplayName:self.displayName];
     }
 }
 
@@ -4792,6 +4921,21 @@ style:UIAlertActionStyleDefault handler:^(UIAlertAction *action) {
     imageCell.mDowloadRetryButton.alpha = 1;
     imageCell.downloadRetryView.alpha = 1;
     imageCell.sizeLabel.alpha = 1;
+}
+
+-(void)updateUserDisplayNameWithMessage:(ALMessage *) message withDisplayName:(NSString *) displayName {
+    ALContactDBService * contactDBService = [[ALContactDBService alloc] init];
+
+    if (displayName.length && !message.groupId) {
+        ALContact * contact =  [contactDBService loadContactByKey:@"userId" value:message.to];
+        if (contact && [contact isDisplayNameUpdateRequired] ) {
+            [[ALUserService sharedInstance] updateDisplayNameWith:message.to withDisplayName:displayName withCompletion:^(ALAPIResponse *apiResponse, NSError *error) {
+                if (apiResponse &&  [apiResponse.status isEqualToString:AL_RESPONSE_SUCCESS]) {
+                    [contactDBService addOrUpdateMetadataWithUserId:message.to withMetadataKey:AL_DISPLAY_NAME_UPDATED withMetadataValue:@"true"];
+                }
+            }];
+        }
+    }
 }
 
 @end

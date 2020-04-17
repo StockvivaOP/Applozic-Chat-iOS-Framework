@@ -6,10 +6,6 @@
 //  Copyright © 2016 applozic Inc. All rights reserved.
 //
 
-//groupNameInput
-//groupIcon
-#define DEFAULT_GROUP_ICON_IMAGE ([UIImage imageNamed:@"applozic_group_icon.png"])
-
 #import "ALGroupCreationViewController.h"
 #import "ALNewContactsViewController.h"
 #import "ALChatViewController.h"
@@ -28,6 +24,9 @@
 #import "ALContactService.h"
 #import "ALVOIPNotificationHandler.h"
 #import "ALHTTPManager.h"
+
+static const int GROUP_CREATION = 1;
+static NSString *const DEFAULT_GROUP_ICON_NAME = @"applozic_group_icon.png";
 
 @interface ALGroupCreationViewController ()
 
@@ -56,9 +55,10 @@
         self.groupNameInput.textAlignment = NSTextAlignmentRight;
     }
     
-    
-    self.groupNameInput.placeholder = NSLocalizedStringWithDefaultValue(@"groupNameTextField", [ALApplozicSettings getLocalizableName], [NSBundle mainBundle], @"Type your group name", @"");
-    
+    NSDictionary *attrs = @{ NSForegroundColorAttributeName : UIColor.grayColor};
+    self.groupNameInput.attributedPlaceholder = [[NSAttributedString alloc] initWithString:NSLocalizedStringWithDefaultValue(@"groupNameTextField", [ALApplozicSettings getLocalizableName], [NSBundle mainBundle], @"Type your group name", @"") attributes:attrs];
+
+
     [self.descriptionTextView setText: NSLocalizedStringWithDefaultValue(@"descriptionTextForGroup", [ALApplozicSettings getLocalizableName], [NSBundle mainBundle], @"Please provide group name", @"")];
     
     if(self.isViewForUpdatingGroup)
@@ -106,7 +106,7 @@
     }
     else
     {
-        [self.groupIconView setImage:DEFAULT_GROUP_ICON_IMAGE];
+        [self.groupIconView setImage:[UIImage imageNamed:DEFAULT_GROUP_ICON_NAME]];
     }
 }
 
@@ -327,17 +327,17 @@
 {
     image = [image getCompressedImageLessThanSize:1];
     UIAlertController * alert = [UIAlertController alertControllerWithTitle:NSLocalizedStringWithDefaultValue(@"confirmationText", [ALApplozicSettings getLocalizableName], [NSBundle mainBundle], @"Confirmation!", @"")
-                                                                    message:NSLocalizedStringWithDefaultValue(@"areYouSureForUploadText", [ALApplozicSettings getLocalizableName], [NSBundle mainBundle], @"Are you sure to upload?!", @"")
+                                                                    message:NSLocalizedStringWithDefaultValue(@"areYouSureForUploadText", [ALApplozicSettings getLocalizableName], [NSBundle mainBundle], @"Are you sure to upload?", @"")
                                                              preferredStyle:UIAlertControllerStyleAlert];
     
     [ALUtilityClass setAlertControllerFrame:alert andViewController:self];
     
-    UIAlertAction* cancel = [UIAlertAction actionWithTitle:NSLocalizedStringWithDefaultValue(@"cancelOptionText", [ALApplozicSettings getLocalizableName], [NSBundle mainBundle], @"Cancel!", @"") style:UIAlertActionStyleCancel handler:^(UIAlertAction * action) {
-        [self.groupIconView setImage:DEFAULT_GROUP_ICON_IMAGE];
+    UIAlertAction* cancel = [UIAlertAction actionWithTitle:NSLocalizedStringWithDefaultValue(@"cancelOptionText", [ALApplozicSettings getLocalizableName], [NSBundle mainBundle], @"Cancel", @"") style:UIAlertActionStyleCancel handler:^(UIAlertAction * action) {
+        [self.groupIconView setImage:[UIImage imageNamed:DEFAULT_GROUP_ICON_NAME]];
         [alert dismissViewControllerAnimated:YES completion:nil];
     }];
     
-    UIAlertAction* upload = [UIAlertAction actionWithTitle: NSLocalizedStringWithDefaultValue(@"upload", [ALApplozicSettings getLocalizableName], [NSBundle mainBundle], @"Upload!", @"") style:UIAlertActionStyleDefault handler:^(UIAlertAction * action) {
+    UIAlertAction* upload = [UIAlertAction actionWithTitle: NSLocalizedStringWithDefaultValue(@"upload", [ALApplozicSettings getLocalizableName], [NSBundle mainBundle], @"Upload", @"") style:UIAlertActionStyleDefault handler:^(UIAlertAction * action) {
 
         [self.activityIndicator startAnimating];
 
@@ -349,7 +349,7 @@
             return;
         }
         
-        NSString * uploadUrl = [KBASE_URL stringByAppendingString:IMAGE_UPLOAD_URL];
+        NSString * uploadUrl = [KBASE_URL stringByAppendingString:AL_IMAGE_UPLOAD_URL];
         
         self.groupImageUploadURL = uploadUrl;
 
