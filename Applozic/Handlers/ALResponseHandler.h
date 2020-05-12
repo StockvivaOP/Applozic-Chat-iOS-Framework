@@ -11,4 +11,7 @@
 
 +(void) processRequest:(NSMutableURLRequest *) theRequest andTag:(NSString *)tag WithCompletionHandler:(void(^)(id theJson , NSError * theError))reponseCompletion;
 
+//stockviva use
++(NSURLSessionDataTask*) svProcessRequest:(NSMutableURLRequest *) theRequest andTag:(NSString *)tag WithCompletionHandler:(void(^)(id theJson , NSError * theError))reponseCompletion;
+
 @end
