@@ -114,6 +114,26 @@
     }
 }
 
+- (NSURLSessionDataTask*) svDownloadImageThumbnailUrl:(NSString *)url blobKey:(NSString *)blobKey completion:(void (^)(NSString *, NSError *))completion {
+    NSMutableURLRequest * urlRequest = [self getURLRequestForThumbnail:blobKey];
+    if (urlRequest) {
+        NSURLSessionDataTask* _dataTask = [ALResponseHandler svProcessRequest:urlRequest andTag:@"FILE DOWNLOAD URL" WithCompletionHandler:^(id theJson, NSError *theError) {
+            if (theError)
+            {
+                completion(nil,theError);
+                return;
+            }
+            NSString * imageDownloadURL = (NSString *)theJson;
+            ALSLog(ALLoggerSeverityInfo, @"RESPONSE_IMG_URL :: %@",imageDownloadURL);
+            completion(imageDownloadURL, nil);
+        }];
+        return _dataTask;
+    } else {
+        completion(url, nil);
+        return nil;
+    }
+}
+
 -(void) downloadImageThumbnailUrl: (ALMessage *) message withCompletion:(void(^)(NSString * fileURL, NSError *error)) completion{
     [self downloadImageThumbnailUrl:message.fileMeta.thumbnailUrl blobKey:message.fileMeta.thumbnailBlobKey completion:^(NSString *fileURL, NSError *error) {
         completion(fileURL, error);
