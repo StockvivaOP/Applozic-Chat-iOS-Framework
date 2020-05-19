@@ -45,6 +45,9 @@
 
 -(void) downloadImageThumbnailUrl:(NSString *) url blobKey:(NSString *) blobKey completion:(void(^)(NSString * fileURL, NSError *error)) completion;
 
+//stockviva use
+-(NSURLSessionDataTask*) svDownloadImageThumbnailUrl:(NSString *) url blobKey:(NSString *) blobKey completion:(void(^)(NSString * fileURL, NSError *error)) completion;
+
 -(void) downloadImageThumbnailUrl: (ALMessage *) message withCompletion:(void(^)(NSString * fileURL, NSError *error)) completion __attribute__((deprecated));
 
 -(void) downloadImageUrlAndSet: (NSString *) blobKey imageView:(UIImageView *) imageView defaultImage:(NSString *) defaultImage;
