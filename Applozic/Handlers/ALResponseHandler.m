@@ -26,7 +26,7 @@
             ALSLog(ALLoggerSeverityError, @"Authentication error: HTTP 401 : ERROR CODE : %ld, FAILING URL: %@",  (long)connectionError.code,  failingURL);
 
             dispatch_async(dispatch_get_main_queue(), ^{
-                reponseCompletion(nil,[self errorWithDescription:@"Authentication error: 401"]);
+                reponseCompletion(nil,[self errorWithCode:connectionError.code withDescription:@"Authentication error: 401"]);
             });
             return;
         }
@@ -35,7 +35,7 @@
             NSString * failingURL = connectionError.userInfo[@"NSErrorFailingURLStringKey"] != nil ? connectionError.userInfo[@"NSErrorFailingURLStringKey"]:@"Empty";
             ALSLog(ALLoggerSeverityError, @"NO INTERNET CONNECTIVITY, ERROR CODE : %ld, FAILING URL: %@",  (long)connectionError.code, failingURL);
             dispatch_async(dispatch_get_main_queue(), ^{
-                reponseCompletion(nil,[self errorWithDescription:@"No Internet connectivity"]);
+                reponseCompletion(nil,[self errorWithCode:connectionError.code withDescription:@"No Internet connectivity"]);
             });
             return;
         }
@@ -45,7 +45,7 @@
         {
             ALSLog(ALLoggerSeverityError, @"ERROR_RESPONSE : %@ && ERROR:CODE : %ld ", connectionError.description, (long)connectionError.code);
             dispatch_async(dispatch_get_main_queue(), ^{
-                reponseCompletion(nil, [self errorWithDescription:connectionError.localizedDescription]);
+                reponseCompletion(nil, [self errorWithCode:connectionError.code withDescription:connectionError.localizedDescription]);
             });
             return;
         }
@@ -55,7 +55,7 @@
             NSMutableString * errorString = [[NSMutableString alloc] initWithData:data encoding:NSUTF8StringEncoding];
             ALSLog(ALLoggerSeverityError, @"api error : %@ - %@",tag,errorString);
             dispatch_async(dispatch_get_main_queue(), ^{
-                reponseCompletion(nil,[self errorWithDescription:message_SomethingWentWrong]);
+                reponseCompletion(nil,[self errorWithCode:theHttpResponse.statusCode withDescription:message_SomethingWentWrong]);
             });
             return;
         }
@@ -63,7 +63,7 @@
         if (data == nil)
         {
             dispatch_async(dispatch_get_main_queue(), ^{
-                reponseCompletion(nil,[self errorWithDescription:message_SomethingWentWrong]);
+                reponseCompletion(nil,[self errorWithCode:1 withDescription:message_SomethingWentWrong]);
             });
             ALSLog(ALLoggerSeverityError, @"api error - %@",tag);
             return;
@@ -81,7 +81,7 @@
             if (theData == nil)
             {
                 dispatch_async(dispatch_get_main_queue(), ^{
-                    reponseCompletion(nil,[self errorWithDescription:message_SomethingWentWrong]);
+                    reponseCompletion(nil,[self errorWithCode:1 withDescription:message_SomethingWentWrong]);
                 });
                 ALSLog(ALLoggerSeverityError, @"api error - %@",tag);
                 return;
@@ -95,7 +95,7 @@
 
             }else{
                 dispatch_async(dispatch_get_main_queue(), ^{
-                    reponseCompletion(nil,[self errorWithDescription:message_SomethingWentWrong]);
+                    reponseCompletion(nil,[self errorWithCode:1 withDescription:message_SomethingWentWrong]);
                 });
                 ALSLog(ALLoggerSeverityError, @"api error - %@",tag);
                 return;
@@ -167,7 +167,7 @@
             ALSLog(ALLoggerSeverityError, @"Authentication error: HTTP 401 : ERROR CODE : %ld, FAILING URL: %@",  (long)connectionError.code,  failingURL);
 
             dispatch_async(dispatch_get_main_queue(), ^{
-                reponseCompletion(nil,[self errorWithDescription:@"Authentication error: 401"]);
+                reponseCompletion(nil,[self errorWithCode:connectionError.code withDescription:@"Authentication error: 401"]);
             });
             return;
         }
@@ -176,7 +176,7 @@
             NSString * failingURL = connectionError.userInfo[@"NSErrorFailingURLStringKey"] != nil ? connectionError.userInfo[@"NSErrorFailingURLStringKey"]:@"Empty";
             ALSLog(ALLoggerSeverityError, @"NO INTERNET CONNECTIVITY, ERROR CODE : %ld, FAILING URL: %@",  (long)connectionError.code, failingURL);
             dispatch_async(dispatch_get_main_queue(), ^{
-                reponseCompletion(nil,[self errorWithDescription:@"No Internet connectivity"]);
+                reponseCompletion(nil,[self errorWithCode:connectionError.code withDescription:@"No Internet connectivity"]);
             });
             return;
         }
@@ -186,7 +186,7 @@
         {
             ALSLog(ALLoggerSeverityError, @"ERROR_RESPONSE : %@ && ERROR:CODE : %ld ", connectionError.description, (long)connectionError.code);
             dispatch_async(dispatch_get_main_queue(), ^{
-                reponseCompletion(nil, [self errorWithDescription:connectionError.localizedDescription]);
+                reponseCompletion(nil, [self errorWithCode:connectionError.code withDescription:connectionError.localizedDescription]);
             });
             return;
         }
@@ -196,7 +196,7 @@
             NSMutableString * errorString = [[NSMutableString alloc] initWithData:data encoding:NSUTF8StringEncoding];
             ALSLog(ALLoggerSeverityError, @"api error : %@ - %@",tag,errorString);
             dispatch_async(dispatch_get_main_queue(), ^{
-                reponseCompletion(nil,[self errorWithDescription:message_SomethingWentWrong]);
+                reponseCompletion(nil,[self errorWithCode:theHttpResponse.statusCode withDescription:message_SomethingWentWrong]);
             });
             return;
         }
@@ -204,7 +204,7 @@
         if (data == nil)
         {
             dispatch_async(dispatch_get_main_queue(), ^{
-                reponseCompletion(nil,[self errorWithDescription:message_SomethingWentWrong]);
+                reponseCompletion(nil,[self errorWithCode:1 withDescription:message_SomethingWentWrong]);
             });
             ALSLog(ALLoggerSeverityError, @"api error - %@",tag);
             return;
@@ -222,7 +222,7 @@
             if (theData == nil)
             {
                 dispatch_async(dispatch_get_main_queue(), ^{
-                    reponseCompletion(nil,[self errorWithDescription:message_SomethingWentWrong]);
+                    reponseCompletion(nil,[self errorWithCode:1 withDescription:message_SomethingWentWrong]);
                 });
                 ALSLog(ALLoggerSeverityError, @"api error - %@",tag);
                 return;
@@ -236,7 +236,7 @@
 
             }else{
                 dispatch_async(dispatch_get_main_queue(), ^{
-                    reponseCompletion(nil,[self errorWithDescription:message_SomethingWentWrong]);
+                    reponseCompletion(nil,[self errorWithCode:1 withDescription:message_SomethingWentWrong]);
                 });
                 ALSLog(ALLoggerSeverityError, @"api error - %@",tag);
                 return;
@@ -296,9 +296,9 @@
     return nsurlSessionDataTask;
 }
 
-+(NSError *) errorWithDescription:(NSString *) reason
++(NSError *) errorWithCode:(NSInteger) code withDescription:(NSString *) reason
 {
-    return [NSError errorWithDomain:@"Applozic" code:1 userInfo:[NSDictionary dictionaryWithObject:reason forKey:NSLocalizedDescriptionKey]];
+    return [NSError errorWithDomain:@"Applozic" code:code userInfo:[NSDictionary dictionaryWithObject:reason forKey:NSLocalizedDescriptionKey]];
 }
 
 +(NSError * )checkForServerError:(NSString *)response
