@@ -340,7 +340,10 @@ static ALMessageClientService *alMsgClientService;
     else
     {
         ALSLog(ALLoggerSeverityInfo, @"message found in DB just getting it not inserting new one...");
-        dbMessage = (DB_Message*)[dbService getMeesageById:alMessage.msgDBObjectId error:&theError];
+        NSManagedObject* _dbMsgObj = [dbService getMeesageById:alMessage.msgDBObjectId error:&theError];
+        if(_dbMsgObj != nil){
+          dbMessage = (DB_Message*)_dbMsgObj;
+        }
     }
     //convert to dic
     NSDictionary * messageDict = [alMessage dictionary];
@@ -362,18 +365,18 @@ static ALMessageClientService *alMsgClientService;
 
             }else{
 
+                if(dbMessage != nil){
+                    if(channel){
+                        if (channel.type != OPEN || dbMessage.fileMetaInfo != nil) {
+                            alMessage.msgDBObjectId = dbMessage.objectID;
+                            [dbService updateMessageSentDetails:response.messageKey withCreatedAtTime:response.createdAt withDbMessage:dbMessage];
 
-                if(channel){
-                    if (channel.type != OPEN || (dbMessage != nil && dbMessage.fileMetaInfo != nil)) {
+                        }
+                    }else{
                         alMessage.msgDBObjectId = dbMessage.objectID;
                         [dbService updateMessageSentDetails:response.messageKey withCreatedAtTime:response.createdAt withDbMessage:dbMessage];
-
                     }
-                }else{
-                    alMessage.msgDBObjectId = dbMessage.objectID;
-                    [dbService updateMessageSentDetails:response.messageKey withCreatedAtTime:response.createdAt withDbMessage:dbMessage];
                 }
-
                 alMessage.key = response.messageKey;
                 alMessage.sentToServer = YES;
                 alMessage.inProgress = NO;
