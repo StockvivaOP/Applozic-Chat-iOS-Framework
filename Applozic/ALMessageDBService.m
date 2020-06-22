@@ -82,10 +82,12 @@
 
 -(NSManagedObject *)getMeesageById:(NSManagedObjectID *)objectID
                              error:(NSError **)error{
-
-   ALDBHandler * theDBHandler = [ALDBHandler sharedInstance];
-   NSManagedObject *obj =  [theDBHandler.managedObjectContext existingObjectWithID:objectID error:error];
-   return obj;
+    if(objectID == nil) {
+        return nil;
+    }
+    ALDBHandler * theDBHandler = [ALDBHandler sharedInstance];
+    NSManagedObject *obj = [theDBHandler.managedObjectContext existingObjectWithID:objectID error:error];
+    return obj;
 }
 
 
@@ -629,7 +631,11 @@
 -(void) updateFileMetaInfo:(ALMessage *) almessage
 {
     NSError *error=nil;
-    DB_Message * db_Message = (DB_Message*)[self getMeesageById:almessage.msgDBObjectId error:&error];
+    NSManagedObject* _dbMsgObj = [self getMeesageById:almessage.msgDBObjectId error:&error];
+    if(_dbMsgObj == nil){
+      return;
+    }
+    DB_Message * db_Message = (DB_Message*)_dbMsgObj;
     almessage.fileMetaKey = almessage.fileMeta.key;
 
     db_Message.fileMetaInfo.blobKeyString = almessage.fileMeta.blobKey;
