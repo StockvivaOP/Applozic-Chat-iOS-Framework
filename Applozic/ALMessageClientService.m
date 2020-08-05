@@ -70,7 +70,7 @@
         completion(urlRequest, nil);
         return;
     }else if([ALApplozicSettings isStorageServiceEnabled]) {
-        NSString * theUrlString = [NSString stringWithFormat:@"%@%@%@",KBASE_FILE_URL,IMAGE_DOWNLOAD_ENDPOINT,blobKey];
+        NSString * theUrlString = [NSString stringWithFormat:@"%@%@%@",KBASE_FILE_URL,AL_IMAGE_DOWNLOAD_ENDPOINT,blobKey];
         completion(nil, theUrlString);
         return;
     }else {
@@ -334,13 +334,13 @@
 
 -(void) sendPhotoForUserInfo:(NSDictionary *)userInfo withCompletion:(void(^)(NSString * message, NSError *error)) completion {
     if(ALApplozicSettings.isStorageServiceEnabled) {
-        NSString * theUrlString = [NSString stringWithFormat:@"%@%@", KBASE_FILE_URL, IMAGE_UPLOAD_ENDPOINT];
+        NSString * theUrlString = [NSString stringWithFormat:@"%@%@", KBASE_FILE_URL, AL_IMAGE_UPLOAD_ENDPOINT];
         completion(theUrlString, nil);
     }else if(ALApplozicSettings.isS3StorageServiceEnabled) {
-        NSString * theUrlString = [NSString stringWithFormat:@"%@%@", KBASE_FILE_URL, CUSTOM_STORAGE_IMAGE_UPLOAD_ENDPOINT];
+        NSString * theUrlString = [NSString stringWithFormat:@"%@%@", KBASE_FILE_URL, AL_CUSTOM_STORAGE_IMAGE_UPLOAD_ENDPOINT];
         completion(theUrlString, nil);
     }else if(ALApplozicSettings.isGoogleCloudServiceEnabled){
-        NSString * theUrlString = [NSString stringWithFormat:@"%@%@", KBASE_FILE_URL, IMAGE_UPLOAD_ENDPOINT];
+        NSString * theUrlString = [NSString stringWithFormat:@"%@%@", KBASE_FILE_URL, AL_IMAGE_UPLOAD_ENDPOINT];
         completion(theUrlString, nil);
     }else {
         NSString * theUrlString = [NSString stringWithFormat:@"%@/rest/ws/aws/file/url",KBASE_FILE_URL];
@@ -448,6 +448,7 @@
         if (theError)
         {
             ALSLog(ALLoggerSeverityError, @"ERROR IN MESSAGE INFORMATION API RESPONSE : %@", theError);
+            completion(nil, theError);
         }
         else
         {
@@ -569,6 +570,65 @@
      }];
 }
 
+- (void)searchMessageWith: (ALSearchRequest *)request withCompletion: (void (^)(NSMutableArray<ALMessage *> *, NSError *))completion {
+
+    if(!request.searchText || request.searchText.length == 0 ) {
+        NSError *error = [NSError
+                          errorWithDomain:@"Applozic"
+                          code:1
+                          userInfo:[NSDictionary
+                                    dictionaryWithObject:@"Search text is empty or nil"
+                                    forKey:NSLocalizedDescriptionKey]];
+        completion(nil, error);
+        return;
+    }
+
+    NSString *urlString = [NSString stringWithFormat:@"%@/rest/ws/message/search", KBASE_URL];
+    NSString *paramString = [request getParamString];
+    NSMutableURLRequest *urlRequest = [ALRequestHandler
+                                       createGETRequestWithUrlString: urlString
+                                       paramString: paramString];
+    [ALResponseHandler
+     processRequest: urlRequest
+     andTag: @"Search messages"
+     WithCompletionHandler: ^(id theJson, NSError *theError) {
+         if (theError) {
+             ALSLog(ALLoggerSeverityError, @"Search messages ERROR :: %@",theError.description);
+             completion(nil, theError);
+             return;
+         }
+         if (![[theJson valueForKey:@"status"] isEqualToString:@"success"]) {
+             ALSLog(ALLoggerSeverityError, @"Search messages ERROR :: %@",theError.description);
+             NSError *error = [NSError
+                               errorWithDomain:@"Applozic"
+                               code:1
+                               userInfo:[NSDictionary
+                                         dictionaryWithObject:@"Status fail in response"
+                                         forKey:NSLocalizedDescriptionKey]];
+             completion(nil, error);
+             return;
+         }
+         NSDictionary *response = [theJson valueForKey: @"response"];
+         if (response == nil) {
+             ALSLog(ALLoggerSeverityError, @"Search messages RESPONSE is nil");
+             NSError *error = [NSError errorWithDomain:@"response is nil" code:0 userInfo:nil];
+             completion(nil, error);
+             return;
+         }
+         ALSLog(ALLoggerSeverityInfo, @"Search messages RESPONSE :: %@", (NSString *)theJson);
+         NSMutableArray<ALMessage *> *messages = [NSMutableArray new];
+         NSDictionary *messageDict = [response valueForKey: @"message"];
+         for (NSDictionary *dict in messageDict) {
+             ALMessage *message = [[ALMessage alloc] initWithDictonary: dict];
+             [messages addObject: message];
+         }
+         ALChannelFeed *channelFeed = [[ALChannelFeed alloc] initWithJSONString: response];
+         [[SearchResultCache shared] saveChannels: channelFeed.channelFeedsList];
+         completion(messages, nil);
+         return;
+     }];
+}
+
 - (void)getMessageListForUser: (MessageListRequest *)messageListRequest
                      isSearch: (BOOL)flag
                withCompletion: (void (^)(NSMutableArray<ALMessage *> *, NSError *))completion {
@@ -620,12 +680,12 @@
     NSMutableURLRequest* request = [ALRequestHandler createGETRequestWithUrlString: urlString paramString: paramString];
     [ALResponseHandler processRequest:request andTag:@"Get hidden messages" WithCompletionHandler:^(id theJson, NSError *theError) {
         if (theError) {
-            ALSLog(ALLoggerSeverityError, @"Fetching message error", (NSString *)theJson);
+            ALSLog(ALLoggerSeverityError, @"Fetching message error %@", (NSString *)theJson);
             completion(nil, theError);
             return;
         }
         ALAPIResponse* response = [[ALAPIResponse alloc] initWithJSONString:theJson];
-        ALSLog(ALLoggerSeverityInfo, @"Messages fetched successfully", (NSString *)theJson);
+        ALSLog(ALLoggerSeverityInfo, @"Messages fetched successfully %@", (NSString *)theJson);
         completion(response, nil);
     }];
 }

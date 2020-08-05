@@ -118,8 +118,8 @@
 
 -(IBAction)sendButtonAction:(id)sender
 {
-    self.outputFilePath = [recorder.url path];
-    [self.audioAttchmentDelegate audioAttachment: self.outputFilePath];
+    NSString * path = [recorder.url path];
+    [self.audioAttchmentDelegate audioAttachment: path];
     [self.navigationController popViewControllerAnimated:YES];
 }
 
@@ -178,7 +178,7 @@
     
     [[NSNotificationCenter defaultCenter] addObserver: self
                                              selector: @selector(actionWhenAppInBackground)
-                                                 name: @"APP_ENTER_IN_BACKGROUND"
+                                                 name: UIApplicationDidEnterBackgroundNotification
                                                object: nil];
     
     [[NSNotificationCenter defaultCenter] addObserver: self
@@ -191,7 +191,7 @@
 -(void)viewWillDisappear:(BOOL)animated
 {
     [[NSNotificationCenter defaultCenter] removeObserver: self
-                                                    name: @"APP_ENTER_IN_BACKGROUND"
+                                                    name: UIApplicationDidEnterBackgroundNotification
                                                   object: nil];
     
     [[NSNotificationCenter defaultCenter] removeObserver: self

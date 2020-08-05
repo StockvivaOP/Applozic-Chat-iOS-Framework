@@ -22,7 +22,7 @@
 
 + (BOOL)isToday:(NSDate *)todayDate;
 
-+ (NSString*) fileMIMEType:(NSString*) file;
++ (NSString*) fileMIMEType:(NSString*) filePath;
 
 +(CGSize)getSizeForText:(NSString *)text maxWidth:(CGFloat)width font:(NSString *)fontName fontSize:(float)fontSize;
 
@@ -33,6 +33,8 @@
 +(NSString*)getLocationUrl:(ALMessage*)almessage size: (CGRect) withSize;
 
 +(void)thirdDisplayNotificationTS:(NSString *)toastMessage andForContactId:(NSString *)contactId withGroupId:(NSNumber*) groupID withConversationId:(NSNumber *)conversationId delegate:(id)delegate;
+
++(void)thirdDisplayNotificationTS:(NSString *)toastMessage andForContactId:(NSString *)contactId withGroupId:(NSNumber*) groupID withConversationId:(NSNumber *)conversationId delegate:(id)delegate notificationTapActionDisable:(BOOL) isTapActionDisabled;
 
 +(void)thirdDisplayNotificationTS:(NSString *)toastMessage andForContactId:(NSString *)contactId withGroupId:(NSNumber*) groupID completionHandler:(void (^)(BOOL))handler;
 
@@ -67,4 +69,5 @@
 +(NSURL *)getAppsGroupDirectoryWithFilePath:(NSString *) path;
 +(NSURL *)getApplicationDirectoryWithFilePath:(NSString*) path;
 +(NSData *)compressImage:(NSData *) data;
++(UIImage *)getImageFromFilePath:(NSString *)filePath;
 @end

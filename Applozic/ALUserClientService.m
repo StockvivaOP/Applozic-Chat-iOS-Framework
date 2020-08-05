@@ -177,6 +177,7 @@ typedef NS_ENUM(NSInteger, ApplozicUserClientError) {
         if (theError)
         {
             ALSLog(ALLoggerSeverityError, @"theError");
+            completion(nil, theError);
         }
         else
         {
@@ -204,6 +205,8 @@ typedef NS_ENUM(NSInteger, ApplozicUserClientError) {
         if (theError)
         {
             ALSLog(ALLoggerSeverityError, @"theError,%@",theError);
+            completion(nil, theError);
+            return;
         }
         else{
             completion((NSString *)theJson, nil);
@@ -322,6 +325,7 @@ typedef NS_ENUM(NSInteger, ApplozicUserClientError) {
         NSMutableURLRequest * theRequest = [ALRequestHandler createGETRequestWithUrlString:theUrlString paramString:paramString];
         
         [ALResponseHandler processRequest:theRequest andTag:@"USERS_DETAILS_FOR_ONLINE_CONTACT_LIMIT" WithCompletionHandler:^(id theJson, NSError *theError) {
+
             
             if (theError)
             {
@@ -383,16 +387,28 @@ typedef NS_ENUM(NSInteger, ApplozicUserClientError) {
 #pragma mark UPDATE USER Display Name/Status/Profile Image
 //========================================================================================================================
 
--(void)updateUserDisplayName:(NSString *)displayName andUserImageLink:(NSString *)imageLink userStatus:(NSString *)status
+-(void)updateUserDisplayName:(NSString *)displayName
+            andUserImageLink:(NSString *)imageLink
+                  userStatus:(NSString *)status
+                    metadata:(NSMutableDictionary *)metadata
               withCompletion:(void (^)(id theJson, NSError * error))completionHandler
 {
     
     NSString * theUrlString = [NSString stringWithFormat:@"%@/rest/ws/user/update",KBASE_URL];
     
     NSMutableDictionary *dictionary = [NSMutableDictionary new];
-    [dictionary setObject:displayName forKey:@"displayName"];
-    [dictionary setObject:imageLink forKey:@"imageLink"];
-    [dictionary setObject:status forKey:@"statusMessage"];
+    if (displayName) {
+        [dictionary setObject:displayName forKey:@"displayName"];
+    }
+    if (imageLink) {
+        [dictionary setObject:imageLink forKey:@"imageLink"];
+    }
+    if (status) {
+        [dictionary setObject:status forKey:@"statusMessage"];
+    }
+    if (metadata) {
+        [dictionary setObject:metadata forKey:@"metadata"];
+    }
     
     NSError *error;
     NSData *postdata = [NSJSONSerialization dataWithJSONObject:dictionary options:0 error:&error];
@@ -458,7 +474,7 @@ typedef NS_ENUM(NSInteger, ApplozicUserClientError) {
 
 -(void)subProcessUserDetailServerCallPOST:(ALUserDetailListFeed *)ob withCompletion:(void(^)(NSMutableArray * userDetailArray, NSError * theError))completionMark
 {
-    NSString * theUrlString = [NSString stringWithFormat:@"%@/rest/ws/user/detail",KBASE_URL];
+    NSString * theUrlString = [NSString stringWithFormat:@"%@/rest/ws/user/v2/detail",KBASE_URL];
     
     NSError * error;
     NSData * postdata = [NSJSONSerialization dataWithJSONObject:ob.dictionary options:0 error:&error];
@@ -468,29 +484,30 @@ typedef NS_ENUM(NSInteger, ApplozicUserClientError) {
     
     NSMutableURLRequest * theRequest = [ALRequestHandler createPOSTRequestWithUrlString:theUrlString paramString:paramString];
     
-    [ALResponseHandler processRequest:theRequest andTag:@"USERS_DETAILS_FOR_ONLINE_CONTACT_LIMIT_POST" WithCompletionHandler:^(id theJson, NSError *theError) {
-        
-        ALSLog(ALLoggerSeverityInfo, @"SERVER_RESPONSE_POST_CONTACT : %@", (NSString *)theJson);
-        if ((NSString *)theJson == nil || theError)
-        {
-            completionMark(nil, theError);
-            ALSLog(ALLoggerSeverityError, @"ERROR_SERVER_RESPONSE_POST_CONTACT : %@", theError);
-            return;
-        }
-        
-        NSArray * jsonArray = [NSArray arrayWithArray:(NSArray *)theJson];
-        if(jsonArray.count)
-        {
-            NSMutableArray * ALLUserDetailArray = [NSMutableArray new];
-            NSDictionary * JSONDictionary = (NSDictionary *)theJson;
-            for (NSDictionary * theDictionary in JSONDictionary)
-            {
-                ALUserDetail * userDetail = [[ALUserDetail alloc] initWithDictonary:theDictionary];
-                [ALLUserDetailArray addObject:userDetail];
+    [ALResponseHandler processRequest:theRequest andTag:@"USERS_DETAILS_POST" WithCompletionHandler:^(id theJson, NSError *theError) {
+
+        if (error) {
+            completionMark(nil,error);
+        } else {
+            ALAPIResponse *apiResponse = [[ALAPIResponse alloc] initWithJSONString:(NSString *)theJson];
+            NSMutableArray * userDetailArray = [NSMutableArray new];
+            if([apiResponse.status isEqualToString:AL_RESPONSE_SUCCESS]) {
+                NSDictionary * JSONDictionary = (NSDictionary *)apiResponse.response;
+                for (NSDictionary * theDictionary in JSONDictionary)
+                {
+                    ALUserDetail * userDetail = [[ALUserDetail alloc] initWithDictonary:theDictionary];
+                    [userDetailArray addObject:userDetail];
+                }
+                completionMark(userDetailArray, nil);
+            } else {
+                NSError * reponseError = [NSError errorWithDomain:@"Applozic" code:1
+                                                         userInfo:[NSDictionary dictionaryWithObject:@"ERROR IN JSON STATUS WHILE FETCHING USER DETAILS"
+                                                                                              forKey:NSLocalizedDescriptionKey]];
+                completionMark(nil, reponseError);
             }
-            completionMark(ALLUserDetailArray, theError);
         }
     }];
+
 }
 
 

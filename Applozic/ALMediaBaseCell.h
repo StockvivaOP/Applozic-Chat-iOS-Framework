@@ -10,13 +10,6 @@
  i.e IMAGE, VIDEO, DOCUMENT, AUDIO, LOCATION & CONTACT
  ***************************************************************************************/
 
-#define DATE_LABEL_SIZE 12
-#define MESSAGE_TEXT_SIZE 14
-
-#define USER_PROFILE_PADDING_X 5
-#define USER_PROFILE_PADDING_X_OUTBOX 50
-#define USER_PROFILE_WIDTH 45
-#define USER_PROFILE_HEIGHT 45
 
 #import <UIKit/UIKit.h>
 #import "KAProgressLabel.h"
@@ -37,7 +30,7 @@
 -(void) downloadRetryButtonActionDelegate:(int) index andMessage:(ALMessage *) message;
 -(void) thumbnailDownload:(NSString *) key;
 -(void) stopDownloadForIndex:(int)index andMessage:(ALMessage *)message;
--(void) showFullScreen:(UIViewController *) fullView;
+-(void) showImagePreviewWithFilePath:(NSString *) filePath;
 -(void) deleteMessageFromView:(ALMessage *)message;
 -(void) loadViewForMedia:(UIViewController *)launch;
 -(void) showVideoFullScreen:(AVPlayerViewController *)fullView;

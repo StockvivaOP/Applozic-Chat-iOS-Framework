@@ -7,12 +7,15 @@
 //
 
 #import "ALUserDetail.h"
+#import "ALUserDefaultsHandler.h"
 
 @interface ALUserDetail ()
 
 @end
 
 @implementation ALUserDetail
+
+static NSString *const AL_DISPLAY_NAME_UPDATED = @"AL_DISPLAY_NAME_UPDATED";
 
 - (id)initWithJSONString:(NSString *)JSONResponse {
     
@@ -102,6 +105,50 @@
     
     long secsUtc1970 = [[NSNumber numberWithDouble:[[NSDate date]timeIntervalSince1970] ] longValue ]*1000L;
     return (_notificationAfterTime && [_notificationAfterTime longValue]> secsUtc1970);
+}
+
+- (BOOL)isChatDisabled {
+    return _metadata && [_metadata[AL_DISABLE_USER_CHAT] boolValue];
+}
+
+-(NSMutableDictionary *)getMetaDataDictionary:(NSString *)string {
+
+    if (string == nil) {
+        return nil;
+    }
+
+    NSData * data = [string dataUsingEncoding:NSUTF8StringEncoding];
+    NSPropertyListFormat format;
+    NSMutableDictionary * metaDataDictionary;
+
+    @try
+    {
+        NSError * error;
+        metaDataDictionary = [NSPropertyListSerialization propertyListWithData:data options:NSPropertyListImmutable
+                                                                        format:&format
+                                                                         error:&error];
+    }
+    @catch(NSException * exp) {
+        ALSLog(ALLoggerSeverityError, @"GETTING ERROR in Meta data Serialization");
+    }
+    return metaDataDictionary;
+}
+
+-(NSMutableDictionary *)appendMetadataIn:(NSString *) metadataString {
+
+    NSMutableDictionary * existingMetadata = [self getMetaDataDictionary:metadataString];
+
+    if (existingMetadata && [existingMetadata objectForKey:AL_DISPLAY_NAME_UPDATED]) {
+
+        NSString * flag =  [existingMetadata objectForKey:AL_DISPLAY_NAME_UPDATED];
+
+        if (!_metadata) {
+            _metadata = [[NSMutableDictionary alloc]init];
+        }
+
+        [_metadata setObject:flag forKey:AL_DISPLAY_NAME_UPDATED];
+    }
+    return _metadata;
 }
 
 @end

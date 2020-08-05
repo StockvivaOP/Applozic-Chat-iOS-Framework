@@ -31,12 +31,18 @@
 #import "ALApplozicSettings.h"
 #import "ALMessageClientService.h"
 #import "ApplozicClient.h"
+#import "ALNotificationHelper.h"
 
-
-#define DEFAULT_TOP_LANDSCAPE_CONSTANT -34
-#define DEFAULT_TOP_PORTRAIT_CONSTANT -64
-
-
+const int DEFAULT_TOP_LANDSCAPE_CONSTANT = 34;
+const int DEFAULT_TOP_PORTRAIT_CONSTANT = 64;
+static const int REGULAR_CONTACTS = 0;
+static const int GROUP_CREATION = 1;
+static const int GROUP_ADDITION = 2;
+static const int IMAGE_SHARE = 3;
+static const int LAUNCH_GROUP_OF_TWO = 4;
+static const int BROADCAST_GROUP_CREATION = 5;
+static const int SHOW_CONTACTS = 101;
+static const int SHOW_GROUP = 102;
 
 @interface ALNewContactsViewController ()<ApplozicAttachmentDelegate>
 
@@ -88,7 +94,8 @@
     
     self.contactList = [NSMutableArray new];
     [self handleFrameForOrientation];
-    
+    [self.contactsTableView setBackgroundColor:[UIColor whiteColor]];
+
     //    UIBarButtonItem *barButtonItem = [[UIBarButtonItem alloc] initWithTitle:@"< Back" style:UIBarButtonItemStyleBordered target:self action:@selector(back:)];
     //    [self.navigationItem setLeftBarButtonItem:barButtonItem];
     
@@ -98,6 +105,7 @@
     float y = self.navigationController.navigationBar.frame.origin.y+self.navigationController.navigationBar.frame.size.height;
     self.searchBar = [[UISearchBar alloc] initWithFrame:CGRectMake(0,y, self.view.frame.size.width, 40)];
     self.searchBar.delegate = self;
+    [self.searchBar setSearchBarStyle:UISearchBarStyleMinimal];
     self.searchBar.placeholder =  NSLocalizedStringWithDefaultValue(@"searchInfo", [ALApplozicSettings getLocalizableName], [NSBundle mainBundle], @"Email, userid, number" , @"") ;
     if ([UIApplication sharedApplication].userInterfaceLayoutDirection == UIUserInterfaceLayoutDirectionRightToLeft) {
         UITextField *searchTextField = [((UITextField *)[self.searchBar.subviews objectAtIndex:0]).subviews lastObject];
@@ -230,8 +238,8 @@
         [self updateView];
     }
     
-    if(![ALApplozicSettings getGroupOption]){
-        [self.navigationItem setTitle:NSLocalizedStringWithDefaultValue(@"contactsTitile", [ALApplozicSettings getLocalizableName], [NSBundle mainBundle], @"Contacts" , @"")];
+    if([ALApplozicSettings isGroupListingTabDisabled]){
+        [self.navigationItem setTitle:NSLocalizedStringWithDefaultValue(@"contactsTitle", [ALApplozicSettings getLocalizableName], [NSBundle mainBundle], @"Contacts" , @"")];
         [self.segmentControl setSelectedSegmentIndex:0];
         [self.segmentControl setHidden:YES];
     }
@@ -253,7 +261,12 @@
     {
         ALNotificationView * alNotification = [[ALNotificationView alloc] initWithAlMessage:alMessage
                                                                            withAlertMessage:alMessage.message];
-        [alNotification nativeNotification:self];
+        [alNotification showNativeNotificationWithcompletionHandler:^(BOOL show) {
+
+            ALNotificationHelper * helper = [[ALNotificationHelper alloc] init];
+
+            [helper handlerNotificationClick:alMessage.contactIds withGroupId:alMessage.groupId withConversationId:alMessage.conversationId notificationTapActionDisable:[ALApplozicSettings isInAppNotificationTapDisabled]];
+        }];
     }
 }
 
@@ -300,7 +313,13 @@
         
         ALNotificationView * alNotification = [[ALNotificationView alloc] initWithAlMessage:alMessage
                                                                            withAlertMessage:alMessage.message];
-        [alNotification nativeNotification:self];
+        [alNotification showNativeNotificationWithcompletionHandler:^(BOOL show) {
+
+            ALNotificationHelper * helper = [[ALNotificationHelper alloc] init];
+
+            [helper handlerNotificationClick:alMessage.contactIds withGroupId:alMessage.groupId withConversationId:alMessage.conversationId notificationTapActionDisable:[ALApplozicSettings isInAppNotificationTapDisabled]];
+        }];
+
     }
     else if([updateUI isEqualToNumber:[NSNumber numberWithInt:APP_STATE_INACTIVE]])
     {
@@ -752,11 +771,11 @@
     if ([[UIDevice currentDevice]userInterfaceIdiom] == UIUserInterfaceIdiomPhone &&
         (toOrientation == UIInterfaceOrientationLandscapeLeft || toOrientation == UIInterfaceOrientationLandscapeRight))
     {
-        self.mTableViewTopConstraint.constant = DEFAULT_TOP_LANDSCAPE_CONSTANT;
+        self.mTableViewTopConstraint.constant = - DEFAULT_TOP_LANDSCAPE_CONSTANT;
     }
     else
     {
-        self.mTableViewTopConstraint.constant = DEFAULT_TOP_PORTRAIT_CONSTANT;
+        self.mTableViewTopConstraint.constant = - DEFAULT_TOP_PORTRAIT_CONSTANT;
     }
     [self.view layoutIfNeeded];
 }
